@@ -1,0 +1,11 @@
+.cm-s-gcode .cm-comment        {color: #777; }
+.cm-s-gcode .cm-gcode-move     {color: #827A14; }
+.cm-s-gcode .cm-gcode          {color: #E5B709; }
+.cm-s-gcode .cm-mcode          {color: #170; }
+.cm-s-gcode .cm-toolcode       {color: #a00; }
+.cm-s-gcode .cm-xy-param       {color: #708; }
+.cm-s-gcode .cm-z-param        {color: #179FAE; }
+.cm-s-gcode .cm-feedrate-param {color: #00c; }
+.cm-s-gcode .cm-extrude-param  {color: #a50; }
+.cm-s-gcode .cm-other-param    {color: #000; }
+.cm-s-gcode .cm-number         {color: #999; }

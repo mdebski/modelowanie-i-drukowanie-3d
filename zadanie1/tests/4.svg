@@ -1,0 +1,16 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="3in" height="3in" viewBox="0 0 3 3"
+     xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <title>Test 4 - units </title>
+
+  <!-- one inch -->
+  <path d="M0.5,1 l 1, 0"
+        stroke="black" stroke-width="0.01" fill="none"/>
+
+  <!-- five cm -->
+  <path d="M0.5,1.5 l 1.9685, 0"
+        stroke="black" stroke-width="0.01" fill="none"/>
+
+</svg>

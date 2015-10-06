@@ -1,0 +1,14 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="4cm" height="4cm" viewBox="0 0 400 400"
+     xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <title>Test 1 - rect and lines in path</title>
+  <rect x="10" y="10" width="380" height="380"
+        fill="none" stroke="black" stroke-width="3"/>
+  <path d="M 100 100 L 300 100 L 200 300 z"
+        fill="none" stroke="red" stroke-width="3" />
+  <path d="M 70 300 l 0 20 l 260 0 l 0 -200"
+        fill="none" stroke="green" stroke-width="3" />
+</svg>
+

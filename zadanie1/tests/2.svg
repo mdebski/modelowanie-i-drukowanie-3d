@@ -1,0 +1,19 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="10cm" height="10cm" viewBox="0 0 1000 1000"
+     xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <title>Test 2 - cubic Bézier curves</title>
+
+  <path d="M100,200 C100,100 400,100 400,200" fill="none" stroke="black" stroke-width="5"/>
+
+  <path d="M100,500 C25,400 475,400 400,500" fill="none" stroke="black" stroke-width="5"/>
+
+  <path d="M100,800 C175,700 325,700 400,800" fill="none" stroke="black" stroke-width="5"/>
+
+  <path d="M600,200 C675,100 975,100 900,200" fill="none" stroke="black" stroke-width="5"/>
+
+  <path d="M600,500 C600,350 900,650 900,500" fill="none" stroke="black" stroke-width="5"/>
+
+  <path d="m 728,780 c 0,0 32,88 89,45 c 68,-52 -37,-106 -37,-106 c 0,0 -69,-38 -117,46 c -41,74 98,128 98,128" fill="none" stroke="black" stroke-width="5"/>
+</svg>

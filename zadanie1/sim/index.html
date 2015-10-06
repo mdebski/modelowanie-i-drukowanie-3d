@@ -1,0 +1,318 @@
+<html>
+<head>
+<script src="lib/svg.min.js"></script>
+<script src="lib/codemirror.js"></script>
+<link rel="stylesheet" href="lib/codemirror.css">
+<link rel="stylesheet" href="lib/gcode.css">
+<script src="lib/simple.js"></script>
+<script src="lib/mode.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+<script type="text/javascript">
+var p3d = {};
+p3d.main = function() {
+ p3d.gcode = $('#gcode');
+ p3d.gcodeinput = $('#gcodefile')[0];
+ p3d.console = $('#console');
+ p3d.animation = {};
+
+ p3d.initEditor();
+ p3d.initSvg();
+}
+
+p3d.settings = function(key) {
+ return $('input#settings_' + key).prop('checked');
+}
+
+p3d.initEditor = function() {
+ p3d.editor = CodeMirror.fromTextArea(p3d.gcode[0], {
+  lineNumbers: true,
+  theme: "gcode"
+ });
+ p3d.editor.setSize(null, "100%");
+}
+
+p3d.initSvg = function() {
+ p3d.svg = SVG('printer').size('100%', '100%');
+ p3d.svg.viewbox(0, 0, 165, 235);
+ p3d.svg = p3d.svg.group();
+ p3d.svg.scale(1, -1).move(0, -235);
+ p3d.svg.rect(160, 230).move(2.5, 2.5).radius(1).fill('none')
+        .stroke({color: '#bbb', width: 0.5})
+        .attr({'data-ignore': true});
+ for(i = 1; i < 16; ++i) {
+  p3d.svg.line(2.5 + i*10, 2.5, 2.5 + i*10, 2.5+230)
+         .stroke({color: '#ddd', width: 0.3});
+ }
+ for(i = 1; i < 25; ++i) {
+  p3d.svg.line(2.5, 2.5 + i*10, 2.5+160, 2.5 + i*10)
+         .stroke({color: '#ddd', width: 0.3});
+ }
+}
+
+p3d.pen = function() {
+ return p3d.z < 0.2;
+}
+
+p3d.pen_color = function() {
+ return p3d.pen()?'red':'grey';
+}
+
+p3d.parse_code = function(code) {
+ code = code.split(';')[0]
+ params = code.split(' ');
+ if(code && params) {
+  g = {}
+  params.forEach(function(p) {
+   key = p[0].toLowerCase();
+   val = parseFloat(p.substring(1));
+   g[key] = val;
+  });
+  return g;
+ }
+ return false;
+}
+
+p3d.distance = function(p1, p2) {
+ sq = function(x) { return x*x; }
+ return Math.sqrt(sq(p1[0]-p2[0]) + sq(p1[1]-p2[1]));
+}
+
+p3d.cross = function(mid, a, b) {
+ return (a[0]-mid[0])*(b[1]-mid[1]) -
+        (a[1]-mid[1])*(b[0]-mid[0]);
+}
+
+p3d.redraw = function() {
+ p3d.relative = false;
+ p3d.z = p3d.settings('random')?(Math.random()*100):0;
+ p3d.pos = p3d.settings('random')?([Math.random()*165, Math.random()*235]):[0,0];
+ p3d.feedrate = 100;
+ if(p3d.g) {
+  p3d.g.remove();
+ }
+ p3d.g = p3d.svg.group();
+ p3d.g.hide();
+ p3d.g.move(2.5, 2.5);
+
+ var gcodes = p3d.editor.getValue().split("\n");
+ gcodes.forEach(function(g_orig) {
+  var g = p3d.parse_code(g_orig);
+  if(g) {
+   if(g.g != undefined && g.m != undefined) {
+    p3d.notify('Both G and M in gcode: ' + g_orig, 'danger');
+   } else {
+    switch(g.g) {
+     case 0:
+     case 1:
+      if(g.x != undefined || g.y != undefined || g.z != undefined) {
+       if(p3d.relative) {
+        newPos = [p3d.pos[0] + (g.x || 0), p3d.pos[1] + (g.y || 0)];
+        p3d.z += g.z || 0;
+       } else {
+        newPos = [(g.x == undefined)?p3d.pos[0]:g.x,
+                  (g.y == undefined)?p3d.pos[1]:g.y];
+        p3d.z = (g.z == undefined)?p3d.z:g.z;
+       }
+       p3d.g.path(['M', p3d.pos[0], p3d.pos[1],
+                   'L', newPos[0], newPos[1]].join(' '))
+            .stroke({'color': p3d.pen_color(), 'width': 0.6});
+       p3d.pos = newPos;
+      }
+      if(g.e != undefined) {
+       p3d.notify('Extrude!', 'danger');
+      }
+      if(g.f != undefined) {
+       p3d.feedrate = g.f;
+      }
+      break;
+     case 2:
+     case 3:
+      if(g.x == undefined || g.y == undefined || g.i == undefined || g.j == undefined) {
+       p3d.notify('Invalid arc: ' + g_orig, 'danger');
+      } else {
+       center = [p3d.pos[0] + g.i, p3d.pos[1] + g.j];
+       if(p3d.relative) {
+        end = [p3d.pos[0] + g.x, p3d.pos[1] + g.y];
+       } else {
+        end = [g.x, g.y];
+       }
+       r = p3d.distance(p3d.pos, center);
+       sweep = (g.g == 3)?1:0;
+       long_arc = (p3d.cross(center, p3d.pos, end) < 0 != (g.g == 3))?0:1;
+       p3d.g.path(['M', p3d.pos[0], p3d.pos[1],
+                   'A', r, r, 0, long_arc, sweep, end[0], end[1]].join(' '))
+            .fill('none').stroke({'color': p3d.pen_color(), 'width': 0.6});
+       p3d.pos = end;
+      }
+      break;
+     case 90:
+      p3d.relative = false;
+      break;
+     case 91:
+      p3d.relative = true;
+      break;
+     case 21:
+      break;
+     case 28:
+      if(g.x == undefined && g.y == undefined && g.z == undefined) {
+       p3d.pos = [0, 0]; p3d.z = 0; p3d.pen = true;
+      } else {
+       if(g.x != undefined) {
+        p3d.pos[0] = 0;
+       } if(g.y != undefined) {
+        p3d.pos[1] = 0;
+       } if(g.z != undefined) {
+        p3d.z = 0;
+       }
+      }
+      break;
+     case undefined:
+      break;
+     default:
+      p3d.notify('Unknown gcode: ' + g_orig, 'warning');
+    }
+    if(g.m != undefined) {
+     if([18,20,21,70,72,106,107,111,114,117,120].indexOf(g.M) != -1) {
+      p3d.notify('Dangerous m-code: ' + g_orig, 'danger');
+     }
+    }
+   }
+  }
+ });
+
+ if(p3d.settings('animate')) {
+  p3d.stop_animation();
+  p3d.start_animation();
+ } else {
+  p3d.g.show();
+ }
+}
+
+p3d.stop_animation = function() {
+ p3d.pause_animation();
+ p3d.g.children().forEach(function(p) { p.hide(); });
+ p3d.animation.step = 10; // [ms]
+ p3d.animation.steps = 0;
+ p3d.animation.elements = p3d.g.children();
+ p3d.animation.element_max_time = null;
+ p3d.animation.current_element = 0;
+ p3d.animation.element_time = 0; // [steps]
+ p3d.g.show();
+}
+p3d.start_animation = function() {
+ p3d.notify("Starting animation", 'info');
+ p3d.animation.timeout = setTimeout(p3d.update_animation, p3d.animation.step);
+}
+p3d.pause_animation = function() {
+ if(p3d.animation.timeout) {
+  clearTimeout(p3d.animation.timeout);
+ }
+}
+
+p3d.update_animation = function() {
+ a = p3d.animation;
+ e = a.elements[a.current_element];
+ if(a.element_max_time == null) {
+  a.element_length = e.length();
+  a.element_max_time = a.element_length / p3d.feedrate; // [min]
+  a.element_max_time *= 60*1000; // [ms]
+  a.element_max_time = Math.ceil(a.element_max_time / a.step); // [steps]
+  e.attr({'stroke-dasharray': [a.element_length, a.element_length].join(' ')});
+  e.attr({'stroke-dashoffset': a.element_length});
+  e.show();
+ }
+
+ a.steps += 1;
+ a.element_time += 1;
+ e.attr({'stroke-dashoffset': (1 - a.element_time / a.element_max_time) *
+                              a.element_length});
+
+ if(a.element_time > a.element_max_time) {
+  e.attr({'stroke-dasharray': null, 'stroke-dashoffset': null});
+  a.current_element += 1;
+  a.element_time = 0;
+  a.element_max_time = null;
+ }
+ if(p3d.animation.current_element < a.elements.length) {
+  a.timeout = setTimeout(p3d.update_animation, a.step);
+ } else {
+  p3d.notify("Animation finished in " + a.step * a.steps / 1000 + " s.", 'success');
+ }
+}
+
+p3d.notify = function(text, type) {
+ var label='<span style="margin-right: 5px" class="label label-' + type + '"> </span> ';
+ p3d.console.append('<div>' + label + text + '</div>');
+ p3d.console.scrollTop(p3d.console.prop('scrollHeight'));
+}
+
+p3d.reader = new FileReader();
+p3d.reader.onload = function() {
+ var text = p3d.reader.result;
+ p3d.editor.setValue(text);
+ p3d.notify("Loaded file.", 'success');
+}
+p3d.reader.onerror = function() {
+ p3d.notify("Error reading file: " + p3d.reader.error.message, 'danger');
+}
+p3d.load = function() {
+ p3d.reader.readAsText(p3d.gcodeinput.files[0]);
+}
+
+</script>
+</head>
+
+<body onload="p3d.main()">
+<div id="main" style="height: 90%; display: flex; flex-wrap: nowrap; justify-content: space-around">
+ <div id="preview" style="width: 35%">
+  <h2 style="text-align: center"> Preview </h2>
+  <div id="printer"></div>
+ </div>
+ <div id="gcode-view" style="width: 30%">
+  <h2 style="text-align: center"> Gcode </h2>
+  <textarea id="gcode" style="width: 100%; height: 100%"></textarea>
+ </div>
+ <div id="right" style="display: flex; flex-wrap: wrap; width: 25%">
+  <div id="control" style="width: 100%; height: auto">
+   <h2 style="text-align: center"> Control </h2>
+   <form class="form-horizontal">
+    <div class="form-group">
+     <label for="gcodefile">Load Gcode file</label>
+     <input type="file" id="gcodefile"></input>
+    </div>
+    <div class="form-group" style>
+     <label> Settings </label>
+    <div class="checkbox">
+     <label><input id="settings_animate" type="checkbox" checked> Animate</label>
+    </div>
+    <div class="checkbox">
+     <label><input id="settings_random" type="checkbox" checked> Randomize head starting position</label>
+    </div>
+    </div>
+    <div class="form-group">
+     <div class='btn-toolbar'>
+     <button type="button" class="btn btn-default" onclick="p3d.load();"> Load file </button>
+     <button type="button" class="btn btn-default" onclick="p3d.redraw();"> Redraw </button>
+     <div class="btn-group" role="group">
+      <button type="button" class="btn btn-default" onclick="p3d.stop_animation();"><span class="glyphicon glyphicon-stop"></span></button>
+      <button type="button" class="btn btn-default" onclick="p3d.pause_animation();"><span class="glyphicon glyphicon-pause"></span></button>
+      <button type="button" class="btn btn-default" onclick="p3d.start_animation();"><span class="glyphicon glyphicon-play"></span></button>
+     </div>
+     </div>
+    </div>
+   </form>
+  </div>
+  <div style="width: 100%">
+   <h2 style="text-align: center"> Console </h2>
+   <div class="well" style="min-height: 150px; max-height:50%; overflow-y:scroll" id="console">
+   </div>
+  </div>
+ </div>
+</div>
+</body>
+
+</html>
