@@ -6,4 +6,6 @@
 
 [Punkty z zadań](https://docs.google.com/spreadsheets/d/14Pfb80lGCV7nRbzl8-9guBmK8cOH6RYmhzBhbz2eGKk/edit?usp=sharing)
 
+[Specyfikacja drukarki na MIMie](http://zmorph3d.com/specyfikacja/)
+
 *Maciej Dębski (md319428 at students)*
