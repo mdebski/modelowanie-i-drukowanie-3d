@@ -62,7 +62,7 @@ p3d.pen_color = function() {
 }
 
 p3d.parse_code = function(code) {
- code = code.split(';')[0]
+ code = code.split(';')[0].trim()
  params = code.split(' ');
  if(code && params) {
   g = {}
