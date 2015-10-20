@@ -8,6 +8,6 @@
 
 [Specyfikacja drukarki na MIMie](http://zmorph3d.com/specyfikacja/)
 
-[Firmware drukarki na MIMie (Smoothie)](http://smoothieware.org/)
+[Firmware drukarki na MIMie (Smoothie)](https://github.com/zmorph/Smoothieware-ZMorph-fork)
 
 *Maciej Dębski (md319428 at students)*
