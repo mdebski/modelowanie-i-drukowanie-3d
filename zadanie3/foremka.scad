@@ -1,0 +1,3 @@
+module foremka(min_height=7, max_height=10, thickness=3, invert=false) {
+ ...
+}
